@@ -188,6 +188,9 @@ class Constraint(Matrix):
         """
         Create a value for evenly applying weighting for each driver object
         """
+        if not len(self.drivers) > 1:
+            return
+
         val = "{}_wtVal".format(self.driven[0])
         if mc.objExists(val):
             # Check to make sure object exists
@@ -249,7 +252,8 @@ class Constraint(Matrix):
                 # ... or notify the user if it does
                 return mc.warning("{} is already receiving an incoming connection.".format(drivenAttr))
 
-        return addMtrx
+        if len(self.drivers) > 1:
+            return addMtrx
 
     def parent(self):
         """
