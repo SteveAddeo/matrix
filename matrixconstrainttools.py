@@ -1,4 +1,43 @@
+###########################################################################################
+#
+#   Title: Matrix Constraint Tools
+#   Version 2.0
+#   Author: Steve Addeo
+#   Created: April 15, 2020
+#   Last Updated: July 16, 2020
+#
+#   Descritpion: Utilizes Maya's matrix nodes to apply various constraint solutions that
+#       are faster and lead to less clutter in your outliner
+#
+#    Instructions: all the constraints have the option to maintain offset or not and default
+#       to the more logical option based on what you're trying to do. You can define this
+#       function when you initialize the class (mo=True) or (mo=False)
+#
+#       Constraints - Works like your typical Maya constraint nodes. Select your driver
+#           (or dirvers) object(s), initialize the Constraint class (var =
+#           Constraint(mo=True)), then run your desited constraint:
+#               - var.parent(), var.point(), var.orient(), and var.scale()
+#
+#       Blend Colors - works similarly to the regular constraints (maintain offset defaults
+#           to False) but allows you to control the weighting for one or two drivers. Same
+#            approach as constraint class. Initialize the BlendColor class (var =
+#            BlendColors(mo=False)), then run your command:
+#               - var.parent(), var.point(), var.orient(), and var.scale()
+#
+#      Rivets - an alternative to using follicles, the Rivet class generates a locator or
+#           series of locators that are constrained to a nurbs surface and can act as the
+#           parent for an object you want to stick to a given surface. Simply select your
+#           nurbsSurface, initialize the Rivet class (var = Rivet()), then run your
+#           command:
+#               - var.mk_rivet(name, u=0.0, v=0.5) and you can set the u & v values
+#               - set_rivets(rivets) set a number of rivets to evenly distribute evenly
+#                   along the u values of the nurbs surface
+#
+###########################################################################################
+
+
 import maya.cmds as mc
+import pymel.core as pm
 from maya.api.OpenMaya import MMatrix as omm
 
 # Suffix variables
@@ -58,10 +97,10 @@ class Matrix:
                 # If the object isn't already part of the drivers list, put it there
                 self.drivers.append(obj)
 
-            grp = "{}{}".format(obj, GRP)
+            grp = "{}{}".format(self.driven[0], GRP)
             if parent is None or parent[0] != grp:
-                # Check to see if object has a parent group and, if not, give it one
-                self.mk_parent_grp(obj)
+                # Check to see if your driven object has a parent group and, if not, give it one
+                self.mk_parent_grp(self.driven[0])
 
         return self.drivers, self.driven[0]
 
@@ -69,8 +108,7 @@ class Matrix:
         """
         Create a parent_grp and transfer objects transform attributes
         """
-        grp = "{}_grp".format(obj)
-        mc.createNode("transform", n=grp)
+        grp = mc.createNode("transform", n="{}_grp".format(obj))
         mc.matchTransform(grp, obj)
         mc.parent(obj, grp)
         return grp
@@ -109,8 +147,8 @@ class Matrix:
                 mc.shadingNode("multMatrix", asUtility=True, n=multM)
                 # Connect multMatrix node
                 mc.connectAttr(offsetAttr, "{}.matrixIn[0]".format(multM))
-                mc.connectAttr(drivenGrpWIM, "{}.matrixIn[1]".format(multM))
-                mc.connectAttr(dOut, "{}.matrixIn[2]".format(multM))
+                mc.connectAttr(dOut, "{}.matrixIn[1]".format(multM))
+                mc.connectAttr(drivenGrpWIM, "{}.matrixIn[2]".format(multM))
 
             multMList.append(driver)
 
@@ -432,7 +470,7 @@ class Rivet(Matrix):
 
         return obj[0]
 
-    def get_pt_surface(self, riv, u, v=0.5):
+    def get_pt_surface(self, riv, u, v):
         """
         Create a pointOnSurface node for your driver surface
         """
@@ -472,16 +510,51 @@ class Rivet(Matrix):
                                "{}.in{}{}".format(mtrx, i, j))
         return mtrx
 
+    def mk_rivet(self, name, u=0.0, v=0.5):
+        """
+        Create a rivet based on a defined uValue and vVaule
+        """
+        if mc.objExists(name):
+            return name
+
+        if len(self.drivers) == 0:
+            self.get_driver()
+
+        driverDecM = self.mk_decomposition(self.drivers[0])
+
+        if not mc.connectionInfo("{}{}".format(driverDecM, MTRXIN), id=1):
+            # Check to make sure decompose matrix is receiving data from driver
+            mc.connectAttr("{}{}".format(
+                self.drivers[0], WM), "{}{}".format(driverDecM, MTRXIN))
+
+        riv = pm.spaceLocator(n=name)[0]
+        mc.setAttr("{}.inheritsTransform".format(riv), 0)
+
+        # Create the nodes
+        ptSurf = self.get_pt_surface(riv, u, v)
+        mtrx = self.mk_4x4_mtrx(ptSurf)
+        decM = self.mk_decomposition(riv)
+
+        # Connect the nodes
+        mc.connectAttr("{}{}".format(mtrx, OUT),
+                       "{}{}".format(decM, MTRXIN))
+        mc.connectAttr("{}.outputTranslate".format(
+            decM), "{}{}".format(riv, POS_ATTR))
+        mc.connectAttr("{}.outputRotate".format(
+            decM), "{}{}".format(riv, ROT_ATTR))
+        mc.connectAttr("{}.outputScale".format(
+            driverDecM), "{}{}".format(riv, SCL_ATTR))
+
+        return riv
+
     def set_rivets(self, rivets):
         """
         Create a given number of rivets set eavenly across the Uvalue of a nurbsSurface
         """
-        self.get_driver()
-        driverDecM = self.mk_decomposition(self.drivers[0])
-        mc.connectAttr("{}{}".format(
-            self.drivers[0], WM), "{}{}".format(driverDecM, MTRXIN))
-
         rivList = []
+        self.get_driver()
+        rivGrp = mc.createNode(
+            "transform", n="{}_riv{}".format(self.drivers[0], GRP))
 
         for rivet, i in enumerate(range(rivets), 1):
             # Create a locator and matrix constraint network
@@ -492,24 +565,12 @@ class Rivet(Matrix):
             else:
                 uVal = i / (rivets - 1.0)
 
-            riv = mc.spaceLocator(n="{}_riv{}".format(
-                self.drivers[0], str(rivet).zfill(2)))[0]
-            mc.setAttr("{}.inheritsTransform".format(riv), 0)
+            # Create the rivet
+            riv = self.mk_rivet("{}_riv{}".format(
+                self.drivers[0], str(rivet).zfill(2)), uVal)
+            mc.parent(riv, rivGrp)
             rivList.append(riv)
 
-            # Create the nodes
-            ptSurf = self.get_pt_surface(riv, u=uVal)
-            mtrx = self.mk_4x4_mtrx(ptSurf)
-            decM = self.mk_decomposition(riv)
-
-            # Connect the nodes
-            mc.connectAttr("{}{}".format(mtrx, OUT),
-                           "{}{}".format(decM, MTRXIN))
-            mc.connectAttr("{}.outputTranslate".format(
-                decM), "{}{}".format(riv, POS_ATTR))
-            mc.connectAttr("{}.outputRotate".format(
-                decM), "{}{}".format(riv, ROT_ATTR))
-            mc.connectAttr("{}.outputScale".format(
-                driverDecM), "{}{}".format(riv, SCL_ATTR))
-
+        # Organize the outliner
+        mc.parent(rivGrp, "{}{}".format(self.drivers[0], GRP))
         return rivList
