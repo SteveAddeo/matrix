@@ -37,7 +37,6 @@
 
 
 import maya.cmds as mc
-import pymel.core as pm
 from maya.api.OpenMaya import MMatrix as omm
 
 # Suffix variables
@@ -476,7 +475,8 @@ class Rivet(Matrix):
         """
         ptSurf = "{}_ptSurf".format(riv)
 
-        if not mc.objectType("{}Shape".format(self.drivers[0])) == "nurbsSurface":
+        shape = mc.listRelatives(self.drivers[0], c=True)[0]
+        if not mc.objectType(shape) == "nurbsSurface":
             # Check to make sure incomming geo is a nurbs surface
             return mc.warning("Driver object needs to be a nurbsSurface")
 
@@ -527,7 +527,7 @@ class Rivet(Matrix):
             mc.connectAttr("{}{}".format(
                 self.drivers[0], WM), "{}{}".format(driverDecM, MTRXIN))
 
-        riv = pm.spaceLocator(n=name)[0]
+        riv = mc.spaceLocator(n=name)[0]
         mc.setAttr("{}.inheritsTransform".format(riv), 0)
 
         # Create the nodes
