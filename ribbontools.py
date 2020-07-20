@@ -15,6 +15,9 @@ class Ribbon(mt.Rivet):
         self.driven = []
 
     def mk_ribbon(self):
+        """
+        Create the ribbon that will be the base for your rig
+        """
         ratio = 1.0 / self.width
         ribbon = "{}{}".format(self.name, RIB)
         grp = "{}{}".format(ribbon, GRP)
@@ -31,17 +34,24 @@ class Ribbon(mt.Rivet):
         return ribbon
 
     def mk_rig(self, ribbon):
+        """
+        Create the rivets and joints that follow along the surface
+        of your ribbon
+        """
         mc.select(ribbon, r=True)
 
+        # set your ribbon as the driver object
         if len(self.drivers) != 0:
             self.drivers[0] = ribbon[0]
         else:
             self.drivers.append(ribbon[0])
 
+        # Create the rivets that will follow along the ribbon surface
         rivets = self.set_rivets(self.spans + 1)
         jntLst = []
 
         for rivet in rivets:
+            # creat a joint for each rivet
             jnt = mc.joint(radius=0.15, name=rivet.replace(
                 "riv", "jnt"), roo="yzx")
             mc.parent(jnt, rivet)
@@ -62,15 +72,17 @@ class Ribbon(mt.Rivet):
         deformer = "{}_{}".format(ribbon, defType)
 
         if mc.objExists(deformer):
+            # Make sure deformer doesn't already exist
             return deformer
 
+        # Create a duplicate of your ribbon to apply deformer to
         mc.duplicate(ribbon, name="{}_{}".format(ribbon, defType))
         deform = mc.nonLinear(deformer, type=defType)
         mc.rename(deform[0], "{}Def".format(deformer))
         hndl = mc.rename(deform[1], "{}Hndl".format(deformer))
         mc.setAttr(hndl + ".rotateZ", -90)
 
-        # Connect geometry to primary ribbon via a blend shape
+        # Connect duplicate to primary ribbon via a blend shape
         if not mc.objExists(bs):
             mc.blendShape(deformer, ribbon, n=bs, foc=True, w=(0, 1))
 
@@ -127,5 +139,11 @@ class Ribbon(mt.Rivet):
         """
         Create a curve skinned along with ribbon that provides you with
         your ribbon's length data for volume preservation
+        """
+        pass
+
+    def set_preserve_vol(self):
+        """
+        Set the squash & stretch ammounts for ribbon joints
         """
         pass
