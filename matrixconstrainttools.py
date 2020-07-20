@@ -45,6 +45,7 @@ ROT = "_rot"
 SCL = "_scale"
 GRP = "_grp"
 BC = "_bc"
+RIV = "_riv"
 BIND = "_bind"
 FK = "_FK"
 IK = "_IK"
@@ -475,7 +476,7 @@ class Rivet(Matrix):
         """
         ptSurf = "{}_ptSurf".format(riv)
 
-        shape = mc.listRelatives(self.drivers[0], c=True)[0]
+        shape = mc.listRelatives(self.drivers[0], s=True)[0]
         if not mc.objectType(shape) == "nurbsSurface":
             # Check to make sure incomming geo is a nurbs surface
             return mc.warning("Driver object needs to be a nurbsSurface")
@@ -484,8 +485,8 @@ class Rivet(Matrix):
             mc.createNode("pointOnSurfaceInfo", n=ptSurf)
         mc.setAttr("{}.parameterU".format(ptSurf), u)
         mc.setAttr("{}.parameterV".format(ptSurf), v)
-        mc.connectAttr("{}Shape.worldSpace".format(
-            self.drivers[0]), "{}.inputSurface".format(ptSurf))
+        mc.connectAttr("{}.worldSpace[0]".format(
+            shape), "{}.inputSurface".format(ptSurf))
 
         return ptSurf
 
@@ -554,7 +555,7 @@ class Rivet(Matrix):
         rivList = []
         self.get_driver()
         rivGrp = mc.createNode(
-            "transform", n="{}_riv{}".format(self.drivers[0], GRP))
+            "transform", n="{}{}{}".format(self.drivers[0], RIV, GRP))
 
         for rivet, i in enumerate(range(rivets), 1):
             # Create a locator and matrix constraint network
@@ -566,8 +567,8 @@ class Rivet(Matrix):
                 uVal = i / (rivets - 1.0)
 
             # Create the rivet
-            riv = self.mk_rivet("{}_riv{}".format(
-                self.drivers[0], str(rivet).zfill(2)), uVal)
+            riv = self.mk_rivet("{}{}{}".format(
+                self.drivers[0], RIV, str(rivet).zfill(2)), uVal)
             mc.parent(riv, rivGrp)
             rivList.append(riv)
 
