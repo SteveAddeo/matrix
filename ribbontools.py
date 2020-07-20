@@ -1,5 +1,6 @@
 import maya.cmds as mc
 import matrixconstrainttools as mt
+reload(mt)
 
 RIB = "_rib"
 GRP = "_grp"
