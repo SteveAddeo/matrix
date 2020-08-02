@@ -96,6 +96,8 @@ class Matrix:
             elif obj not in driversChk and obj not in drivenChk:
                 # If the object isn't already part of the drivers list, put it there
                 self.drivers.append(obj)
+            else
+                self.driven[0] = obj
 
             grp = "{}{}".format(self.driven[0], GRP)
             if parent is None or parent[0] != grp:
