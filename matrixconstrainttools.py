@@ -66,7 +66,6 @@ VECTORS = ["X", "Y", "Z"]
 
 class Matrix:
     def __init__(self, mo):
-        super(Matrix, self).__init__()
         self.mo = mo
         self.drivers = []
         self.driven = []
