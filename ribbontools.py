@@ -328,6 +328,7 @@ class Ribbon(mt.Rivet):
         mc.parent(tpDriver, driverGrp)
         mc.parent(btDriver, driverGrp)
         mc.parent(driverGrp, "{}_rig".format(self.name))
+        mc.reorder(driverGrp, r=-1)
 
     def skin_trio_drivers(self):
         """
