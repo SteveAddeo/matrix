@@ -258,7 +258,7 @@ class Ribbon(mt.Rivet):
         for i, v in enumerate(VECTORS):
             mc.setAttr("{}_rig.translate{}".format(self.name, v), pos[i])
             mc.setAttr("{}_rig.rotate{}".format(self.name, v), rot[i])
-        mc.setAttr("{}.translateX".format(self.robbon), self.width * .5)
+        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
 
     def orient_x_to_y(self):
         """
