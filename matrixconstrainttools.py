@@ -75,8 +75,6 @@ class Matrix:
         Create parent groups and returns a list of your diven object
         as well as your driver
         """
-        drivers = []
-        driven = []
         objs = mc.ls(sl=True)
 
         if not len(objs) >= 2 and len(self.driven) == 0:
@@ -89,22 +87,22 @@ class Matrix:
                 pass
 
             parent = mc.listRelatives(obj, p=True)
+            driversChk = set(self.drivers)
+            drivenChk = set(self.driven)
 
-            if i == len(objs):
+            if i == len(objs) and len(self.driven) == 0:
                 # If the driven list is empty, put the last object selected in that list
-                driven.append(obj)
-            else:
+                self.driven.append(obj)
+            elif obj not in driversChk and obj not in drivenChk:
                 # If the object isn't already part of the drivers list, put it there
-                drivers.append(obj)
+                self.drivers.append(obj)
 
-            grp = "{}{}".format(driven[0], GRP)
+            grp = "{}{}".format(self.driven[0], GRP)
             if parent is None or parent[0] != grp:
                 # Check to see if your driven object has a parent group and, if not, give it one
                 self.mk_parent_grp(self.driven[0])
 
-        self.drivers = drivers
-        self.driven = driven
-        return drivers, driven[0]
+        return self.drivers, self.driven[0]
 
     def mk_parent_grp(self, obj):
         """
