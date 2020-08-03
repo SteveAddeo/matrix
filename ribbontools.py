@@ -110,7 +110,7 @@ class Ribbon(mt.Rivet):
             jntLst.append(jnt)
 
         mc.parent("{}{}{}{}".format(self.name, RIB, RIV, GRP), rig)
-        mc.parent("{}{}{}".fortmat(self.name, RIB, GRP), rig)
+        mc.parent("{}{}{}".format(self.name, RIB, GRP), rig)
         mc.select(ribbon, r=True)
         self.joints = jntLst
         return jntLst
