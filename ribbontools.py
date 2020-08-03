@@ -260,7 +260,7 @@ class Ribbon(mt.Rivet):
             mc.setAttr("{}_rig.rotate{}".format(self.name, v), rot[i])
         mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
 
-    def orient_x_to_y(self):
+    def orient_ribbon_x_to_y(self):
         """
         Ribbons may have to be aligned to their driver joints, this method
         aligns the ribbon to the joint's Y axis
