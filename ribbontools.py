@@ -50,7 +50,7 @@ class Ribbon(mt.Rivet):
         your ribbon's length data for volume preservation
         """
         crv = mc.duplicateCurve("{}.v[0.5]".format(
-            self.ribbon), ch=False, rn=False, l=True, n=self.ribbon.replace("ribbon", "crv"))[0]
+            self.ribbon), ch=True, rn=False, l=True, n=self.ribbon.replace("ribbon", "crv"))[0]
         mc.setAttr("{}.visibility".format(crv), 0)
 
         # Add curve to lenCurves cless variable
@@ -303,8 +303,7 @@ class Ribbon(mt.Rivet):
             # Set the weighting of the CVs based on the number of CV rows
             mc.skinPercent(scRib, "{}.cv[{}][0:3]".format(
                 ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
-            #mc.skinPercent(scRib, "{}.cv[{}]".format(crv, i), tv=[
-                           #(btDriver, btwt), (tpDriver, tpwt)])
+            # mc.skinPercent(scRib, "{}.cv[{}]".format(crv, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
         """
         # turn off ribbon's inherit transform to prevent double transforms
         mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
