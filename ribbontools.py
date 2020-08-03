@@ -309,6 +309,12 @@ class Ribbon(mt.Rivet):
         # turn off curve's inherit transform to prevent double transforms
         mc.setAttr("{}.inheritsTransform".format(crv), 0)
 
+        # Group your driver joints and parent it to your rig group
+        driverGrp = mc.createNode("transform", n="{}_driver_jnt_grp".format(self.name))
+        mc.parent(tpDriver, driverGrp)
+        mc.parent(btDriver, driverGrp)
+        mc.parent(driverGrp, "{}_rig".format(self.name))
+
     def skin_trio_drivers(self):
         """
         Creates a set of driver joints: one in the middle and
