@@ -35,7 +35,6 @@ class Ribbon(mt.Rivet):
         if not mc.listRelatives(ribbon, p=True) == grp:
             self.mk_parent_grp(ribbon)
 
-        mc.setAttr("{}.inheritsTransform".format(ribbon), 1)
         mc.setAttr("{}.rotateOrder".format(grp), 1)
         mc.xform(ribbon, piv=[-(self.width * .5), 0, 0])
 
