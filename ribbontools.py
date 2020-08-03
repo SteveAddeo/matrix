@@ -194,20 +194,33 @@ class Ribbon(mt.Rivet):
         shape = mc.listRelatives(crv, s=True)[0]
         info = mc.shadingNode("curveInfo", asUtility=True,
                               n="{}_info".format(crv))
-        decM = mc.shadingNode("decomposeMatrix", asUtility=True,
-                              n="{}{}_decM".format(self.name, RIG))
-        nml = mc.shadingNode("multDoubleLinear", asUtility=True,
-                             n="{}{}_scl_nml".format(self.name, RIG))
-        div = mc.shadingNode(
-            "multiplyDivide", asUtility=True, n="{}_scl_div".format(crv))
         blend = mc.shadingNode(
             "blendTwoAttr", asUtility=True, n="{}_volPreserve_offOn".format(crv))
+        decM = mc.shadingNode("decomposeMatrix", asUtility=True,
+                              n="{}{}_decM".format(self.name, RIG))
+        nml = mc.shadingNode("multiplyDivide", asUtility=True,
+                             n="{}_len_scl_nml".format(self.name))
+        pwr = mc.shadingNode(
+            "multiplyDivide", asUtility=True, n="{}_len_scl_pwr".format(self.name))
+        div = mc.shadingNode(
+            "multiplyDivide", asUtility=True, n="{}_len_scl_div".format(self.name))
 
         # Set attributes for blender node
-        mc.setAttr("{}.input[0]".format(blend), 1.0)
+        crvLen = mc.getAttr("{}.arcLength".format(info))
+        mc.setAttr("{}.input[0]".format(blend), crvLen)
         mc.setAttr("{}.attributesBlender".format(blend), 1.0)
 
         # Connect the attributes
+        mc.connectAttr("{}.worldSpace[0]".format(
+            shape), "{}.inputCurve".format(info))
+        mc.connectAttr("{}.arcLength".format(info), "{}.input1X".format(nml))
+        mc.connectAttr("{}{}.worldMatrix[0]".format(
+            self.name, RIG), "{}.inputMatrix".format(decM))
+        mc.connectAttr("{}.outputScale".format(decM), "{}.input2".format(nml))
+        mc.connectAttr("{}.outputX".format(nml), "{}.input1X".format(pwr))
+        mc.connectAttr("{}.outputX".format(pwr), "{}.input2X".format(div))
+
+        """
         mc.connectAttr("{}{}.worldMatrix[0]".format(
             self.name, RIG), "{}.inputMatrix".format(decM))
         mc.connectAttr("{}.outputScaleX".format(decM), "{}.input2".format(nml))
@@ -217,11 +230,14 @@ class Ribbon(mt.Rivet):
         mc.connectAttr("{}.arcLength".format(info), "{}.input2X".format(div))
         mc.connectAttr("{}.outputX".format(div),
                        "{}.input[1]".format(blend))
+        """
 
-        # Set ttributes for divide node
+        # Set attributes for multiplyDivide node
+        mc.setAttr("{}.operation".format(nml), 2)
+        mc.setAttr("{}.operation".format(pwr), 3)
         mc.setAttr("{}.operation".format(div), 2)
-        crvLen = mc.getAttr("{}.arcLength".format(info))
-        mc.setAttr("{}.input1".format(nml), crvLen)
+        mc.setAttr("{}.input2X".format(pwr), 0.5)
+        mc.setAttr("{}.input1X".format(div), 1)
 
         # Connect network to joints' scales Y and Z
         for joint in self.joints:
