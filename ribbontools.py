@@ -284,8 +284,6 @@ class Ribbon(mt.Rivet):
         # Apply skincluster to ribbon and lenCrv
         scRib = mc.skinCluster(btDriver, tpDriver, ribbon,
                                n="{}_sc".format(ribbon))[0]
-        scCrv = mc.skinCluster(btDriver, tpDriver, crv,
-                               n="{}_sc".format(crv))[0]
         for i in range(cvrows):
             if i == 0:
                 btwt = 1
@@ -305,7 +303,7 @@ class Ribbon(mt.Rivet):
             # Set the weighting of the CVs based on the number of CV rows
             mc.skinPercent(scRib, "{}.cv[{}][0:3]".format(
                 ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
-            mc.skinPercent(scCrv, "{}.cv[{}]".format(crv, i), tv=[
+            mc.skinPercent(scRib, "{}.cv[{}]".format(crv, i), tv=[
                            (btDriver, btwt), (tpDriver, tpwt)])
 
         # turn off ribbon's inherit transform to prevent double transforms
