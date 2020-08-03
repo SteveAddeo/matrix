@@ -108,8 +108,8 @@ class Ribbon(mt.Rivet):
             mc.setAttr("{}.translateY".format(jnt), 0)
             jntLst.append(jnt)
 
-        mc.parent("{}{}{}{}".format(self.name, RIB, RIV, GRP), rig)
         mc.parent("{}{}{}".format(self.name, RIB, GRP), rig)
+        mc.parent("{}{}{}{}".format(self.name, RIB, RIV, GRP), rig)
         mc.select(ribbon, r=True)
         self.joints = jntLst
         return jntLst
@@ -249,9 +249,8 @@ class Ribbon(mt.Rivet):
         frac = 1.0 / self.spans
         thrdFrac = .333 * frac
 
-        mc.xform(ribbon, ws=True, t=(self.width * .5, 0, 0), ro=(90, 0, 90))
-        mc.connectAttr("{}{}.worldMatrix[0]".format(
-            ribbon, GRP), "{}_decM.inputMatrix".format(ribbon), f=True)
+        mc.setAttr("{}.translateX".format(ribbon), self.width * .5)
+        mc.xform(ribbon, ws=True, ro=(90, 0, 90))
         """
         # Set the position of the ribbon to the base driver joint
         pos = mc.xform(btDriver, q=True, ws=True, rp=True)
