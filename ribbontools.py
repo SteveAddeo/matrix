@@ -228,7 +228,7 @@ class Ribbon(mt.Rivet):
         mc.setAttr("{}.operation".format(nml), 2)
         mc.setAttr("{}.operation".format(pwr), 3)
         mc.setAttr("{}.operation".format(div), 2)
-        mc.setAttr("{}.input1X".format(nml), crvLen)
+        mc.setAttr("{}.input1X".format(scl), crvLen)
         mc.setAttr("{}.input2X".format(pwr), 0.5)
         mc.setAttr("{}.input1X".format(div), 1)
 
