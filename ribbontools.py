@@ -277,6 +277,8 @@ class Ribbon(mt.Rivet):
         frac = 1.0 / self.spans
         thrdFrac = .333 * frac
 
+        mc.makeIdentity(btDriver, a=True)
+
         # Apply skincluster to ribbon
         sc = mc.skinCluster(btDriver, tpDriver, ribbon, n=ribbon + "_sc")[0]
         for i in range(cvrows):
