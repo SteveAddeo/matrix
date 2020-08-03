@@ -215,7 +215,7 @@ class Ribbon(mt.Rivet):
         mc.connectAttr("{}{}.worldMatrix[0]".format(
             self.name, RIG), "{}.inputMatrix".format(decM))
         mc.connectAttr("{}.outputScale".format(decM), "{}.input2".format(scl))
-        mc.connectAttr("{}.outputX".format(scl), "{}.input2".format(nml))
+        mc.connectAttr("{}.outputX".format(scl), "{}.input2X".format(nml))
         mc.connectAttr("{}.outputX".format(nml), "{}.input1X".format(pwr))
         mc.connectAttr("{}.outputX".format(pwr), "{}.input2X".format(div))
 
