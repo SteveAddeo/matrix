@@ -241,10 +241,13 @@ class Ribbon(mt.Rivet):
 
         # Connect network to joints' scales Y and Z
         for joint in self.joints:
+            riv = joint.replace("jnt", "riv")
             mc.connectAttr("{}.outputX".format(div),
                            "{}.scaleY".format(joint))
             mc.connectAttr("{}.outputX".format(div),
                            "{}.scaleZ".format(joint))
+            mc.connectAttr("{}.outputScale".format(decM),
+                           "{}.scale".format(riv), f=True)
 
         """
         # Need to figgure out how to apply to multiple cuves
