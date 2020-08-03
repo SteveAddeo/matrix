@@ -273,9 +273,9 @@ class Ribbon(mt.Rivet):
         mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
         mc.setAttr("{}.rotateZ".format(self.ribbon), 90)
         mc.setAttr("{}.rotateX".format(self.ribbon), 90)
-        mc.setAttr("{}.translateX".format(self.lenCurves[0]), self.width * .5)
         mc.setAttr("{}.rotateZ".format(self.lenCurves[0]), 90)
         mc.setAttr("{}.rotateX".format(self.lenCurves[0]), 90)
+        mc.setAttr("{}.translateX".format(self.lenCurves[0]), self.width * .5)
 
     def skin_duo_drivers(self, btDriver, tpDriver):
         """
