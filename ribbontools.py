@@ -205,11 +205,6 @@ class Ribbon(mt.Rivet):
         div = mc.shadingNode(
             "multiplyDivide", asUtility=True, n="{}_len_scl_div".format(self.name))
 
-        # Set attributes for blender node
-        crvLen = mc.getAttr("{}.arcLength".format(info))
-        mc.setAttr("{}.input[0]".format(blend), crvLen)
-        mc.setAttr("{}.attributesBlender".format(blend), 1.0)
-
         # Connect the attributes
         mc.connectAttr("{}.worldSpace[0]".format(
             shape), "{}.inputCurve".format(info))
@@ -232,7 +227,12 @@ class Ribbon(mt.Rivet):
                        "{}.input[1]".format(blend))
         """
 
-        # Set attributes for multiplyDivide node
+        # Set attributes for blender node
+        crvLen = mc.getAttr("{}.arcLength".format(info))
+        mc.setAttr("{}.input[0]".format(blend), crvLen)
+        mc.setAttr("{}.attributesBlender".format(blend), 1.0)
+
+        # Set attributes for multiplyDivide nodes
         mc.setAttr("{}.operation".format(nml), 2)
         mc.setAttr("{}.operation".format(pwr), 3)
         mc.setAttr("{}.operation".format(div), 2)
@@ -241,9 +241,9 @@ class Ribbon(mt.Rivet):
 
         # Connect network to joints' scales Y and Z
         for joint in self.joints:
-            mc.connectAttr("{}.output".format(blend),
+            mc.connectAttr("{}.outputX".format(div),
                            "{}.scaleY".format(joint))
-            mc.connectAttr("{}.output".format(blend),
+            mc.connectAttr("{}.outputX".format(div),
                            "{}.scaleZ".format(joint))
 
         """
