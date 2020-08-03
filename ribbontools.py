@@ -3,6 +3,7 @@ import matrixconstrainttools as mt
 reload(mt)
 
 RIB = "_ribbon"
+RIG = "_rig"
 RIV = "_riv"
 GRP = "_grp"
 
@@ -87,7 +88,7 @@ class Ribbon(mt.Rivet):
         of your ribbon
         """
         ribbon = self.ribbon
-        rig = mc.createNode("transform", n="{}_rig".format(self.name))
+        rig = mc.createNode("transform", n="{}{}}".format(self.name, RIG))
         mc.select(ribbon, r=True)
 
         # set your ribbon as the driver object
@@ -194,9 +195,9 @@ class Ribbon(mt.Rivet):
         info = mc.shadingNode("curveInfo", asUtility=True,
                               n="{}_info".format(crv))
         decM = mc.shadingNode("decomposeMatrix", asUtility=True,
-                              n="{}{}_decM".format(self.ribbon, GRP))
+                              n="{}{}_decM".format(self.name, RIG))
         nml = mc.shadingNode("multDoubleLinear", asUtility=True,
-                             n="{}{}_scl_nml".format(self.ribbon, GRP))
+                             n="{}{}_scl_nml".format(self.name, RIG))
         div = mc.shadingNode(
             "multiplyDivide", asUtility=True, n="{}_scl_div".format(crv))
         blend = mc.shadingNode(
@@ -208,7 +209,7 @@ class Ribbon(mt.Rivet):
 
         # Connect the attributes
         mc.connectAttr("{}{}.worldMatrix[0]".format(
-            self.ribbon, GRP), "{}.inputMatrix".format(decM))
+            self.name, RIG), "{}.inputMatrix".format(decM))
         mc.connectAttr("{}.outputScaleX".format(decM), "{}.input2".format(nml))
         mc.connectAttr("{}.output".format(nml), "{}.input1X".format(div))
         mc.connectAttr("{}.worldSpace[0]".format(
