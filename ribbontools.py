@@ -236,7 +236,7 @@ class Ribbon(mt.Rivet):
             mc.connectAttr("{}.outputX".format(div),
                            "{}.scaleZ".format(joint))
             mc.connectAttr("{}.outputScale".format(decM),
-                           "{}.scale".format(riv), f=Trueq)
+                           "{}.scale".format(riv), f=True)
 
         """
         # Need to figgure out how to apply to multiple cuves
