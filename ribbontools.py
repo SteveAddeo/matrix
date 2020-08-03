@@ -3,6 +3,7 @@ import matrixconstrainttools as mt
 reload(mt)
 
 RIB = "_ribbon"
+RIV = "_riv"
 GRP = "_grp"
 
 
@@ -34,6 +35,8 @@ class Ribbon(mt.Rivet):
         if not mc.listRelatives(ribbon, p=True) == grp:
             self.mk_parent_grp(ribbon)
 
+        mc.setAttr("{}.inheritsTransform".format(ribbon), 1)
+        mc.setAttr("{}.rotateOrder".format(grp), 1)
         mc.xform(ribbon, piv=[-(self.width * .5), 0, 0])
 
         self.ribbon = ribbon
@@ -47,6 +50,7 @@ class Ribbon(mt.Rivet):
         """
         crv = mc.duplicateCurve("{}.v[0.5]".format(
             self.ribbon), ch=True, rn=False, l=True, n=self.ribbon.replace("ribbon", "crv"))[0]
+        mc.setAttr("{}.visibility".format(crv), 0)
 
         # Add curve to lenCurves cless variable
         self.lenCurves.append(crv)
@@ -70,6 +74,7 @@ class Ribbon(mt.Rivet):
         newCrvs = crvs[0:2]
 
         for crv in newCrvs:
+            mc.setAttr("{}.visibility".format(crv), 0)
             # Add each curve to lenCurves cless variable...
             self.lenCurves.append(crv)
             # ...and parent them to the primary curve
@@ -83,6 +88,7 @@ class Ribbon(mt.Rivet):
         of your ribbon
         """
         ribbon = self.ribbon
+        rig = mc.createNode("transform", n="{}_rig".format(self.name))
         mc.select(ribbon, r=True)
 
         # set your ribbon as the driver object
@@ -103,6 +109,8 @@ class Ribbon(mt.Rivet):
             mc.setAttr("{}.translateY".format(jnt), 0)
             jntLst.append(jnt)
 
+        mc.parent("{}{}{}{}".format(self.name, RIB, RIV, GRP), rig)
+        mc.parent("{}{}{}".fotmat(self.name, RIB, GRP), rig)
         mc.select(ribbon, r=True)
         self.joints = jntLst
         return jntLst
@@ -186,8 +194,12 @@ class Ribbon(mt.Rivet):
         shape = mc.listRelatives(crv, s=True)[0]
         info = mc.shadingNode("curveInfo", asUtility=True,
                               n="{}_info".format(crv))
+        decM = mc.shadingNode("decomposeMatrix", asUtility=True,
+                              n="{}{}_decM".format(self.ribbon, GRP))
+        nml = mc.shadingNode("multDoubleLinear", asUtility=True,
+                             n="{}{}_scl_nml".format(self.ribbon, GRP))
         div = mc.shadingNode(
-            "multiplyDivide", asUtility=True, n="{}_div".format(crv))
+            "multiplyDivide", asUtility=True, n="{}_scl_div".format(crv))
         blend = mc.shadingNode(
             "blendTwoAttr", asUtility=True, n="{}_volPreserve_offOn".format(crv))
 
@@ -196,6 +208,10 @@ class Ribbon(mt.Rivet):
         mc.setAttr("{}.attributesBlender".format(blend), 1.0)
 
         # Connect the attributes
+        mc.connectAttr("{}{}.worldMatrix[0]".format(
+            self.ribbon, GRP), "{}.inputMatrix".format(decM))
+        mc.connectAttr("{}.outputScaleX".format(decM), "{}.input2".format(nml))
+        mc.connectAttr("{}.output".format(nml), "{}.input1X".format(div))
         mc.connectAttr("{}.worldSpace[0]".format(
             shape), "{}.inputCurve".format(info))
         mc.connectAttr("{}.arcLength".format(info), "{}.input2X".format(div))
@@ -205,7 +221,7 @@ class Ribbon(mt.Rivet):
         # Set ttributes for divide node
         mc.setAttr("{}.operation".format(div), 2)
         crvLen = mc.getAttr("{}.arcLength".format(info))
-        mc.setAttr("{}.input1X".format(div), crvLen)
+        mc.setAttr("{}.input1".format(nml), crvLen)
 
         # Connect network to joints' scales Y and Z
         for joint in self.joints:
@@ -234,6 +250,10 @@ class Ribbon(mt.Rivet):
         frac = 1.0 / self.spans
         thrdFrac = .333 * frac
 
+        mc.xform(ribbon, ws=True, t=(self.width * .5, 0, 0), ro=(90, 0, 90))
+        mc.connectAttr("{}{}.worldMatrix[0]".format(
+            ribbon, GRP), "{}_decM.inputMatrix".format(ribbon), f=True)
+        """
         # Set the position of the ribbon to the base driver joint
         pos = mc.xform(btDriver, q=True, ws=True, rp=True)
         mc.xform(ribbon, ws=True, t=(
@@ -252,11 +272,15 @@ class Ribbon(mt.Rivet):
         mc.parent(driverGrp, "{}_grp".format(ribbon))
         mc.matchTransform(driverGrp, btDriver)
         mc.parent(btDriver, driverGrp)
+        """
 
         # turn off ribbon's inherit transform to prevent double transforms
         mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
+        for crv in self.lenCurves:
+            # turn off curve's inherit transform to prevent double transforms
+            mc.setAttr("{}.inheritsTransform".format(crv), 0)
 
-    # Apply skincluster to ribbon
+        # Apply skincluster to ribbon
         sc = mc.skinCluster(btDriver, tpDriver, ribbon, n=ribbon + "_sc")[0]
         for i in range(cvrows):
             if i == 0:
