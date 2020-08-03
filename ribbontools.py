@@ -6,6 +6,7 @@ RIB = "_ribbon"
 RIG = "_rig"
 RIV = "_riv"
 GRP = "_grp"
+VECTORS = ["X", "Y", "Z"]
 
 
 class Ribbon(mt.Rivet):
@@ -215,18 +216,6 @@ class Ribbon(mt.Rivet):
         mc.connectAttr("{}.outputX".format(nml), "{}.input1X".format(pwr))
         mc.connectAttr("{}.outputX".format(pwr), "{}.input2X".format(div))
 
-        """
-        mc.connectAttr("{}{}.worldMatrix[0]".format(
-            self.name, RIG), "{}.inputMatrix".format(decM))
-        mc.connectAttr("{}.outputScaleX".format(decM), "{}.input2".format(nml))
-        mc.connectAttr("{}.output".format(nml), "{}.input1X".format(div))
-        mc.connectAttr("{}.worldSpace[0]".format(
-            shape), "{}.inputCurve".format(info))
-        mc.connectAttr("{}.arcLength".format(info), "{}.input2X".format(div))
-        mc.connectAttr("{}.outputX".format(div),
-                       "{}.input[1]".format(blend))
-        """
-
         # Set attributes for blender node
         crvLen = mc.getAttr("{}.arcLength".format(info))
         mc.setAttr("{}.input[0]".format(blend), crvLen)
@@ -247,7 +236,7 @@ class Ribbon(mt.Rivet):
             mc.connectAttr("{}.outputX".format(div),
                            "{}.scaleZ".format(joint))
             mc.connectAttr("{}.outputScale".format(decM),
-                           "{}.scale".format(riv), f=True)
+                           "{}.scale".format(riv), f=Trueq)
 
         """
         # Need to figgure out how to apply to multiple cuves
@@ -260,6 +249,25 @@ class Ribbon(mt.Rivet):
         for crv in crvs:
         """
 
+    def mv_rig(self, btDriver):
+        """
+        Move the Rig group into position with the bottom driver
+        """
+        pos = mc.getAttr("{}.translate".format(btDriver))[0]
+        rot = mc.getAttr("{}.rotate".format(btDriver))[0]
+        for i, v in enumerate(VECTORS):
+            mc.setAttr("{}_rig.translate{}".format(self.name, v), pos[i])
+            mc.setAttr("{}_rig.test_rig.rotate{}".format(self.name, v), rot[i])
+        mc.setAttr("{}.translateX".format(self.robbon), self.width * .5)
+
+    def orient_x_to_y(self):
+        """
+        Ribbons may have to be aligned to their driver joints, this method
+        aligns the ribbon to the joint's Y axis
+        """
+        mc.setAttr("{}.rotateZ".format(self.ribbon), 90)
+        mc.setAttr("{}.rotateX".format(self.ribbon), 90)
+
     def skin_duo_drivers(self, btDriver, tpDriver):
         """
         Creates a pair of driver joints at either end of your ribbon
@@ -268,35 +276,6 @@ class Ribbon(mt.Rivet):
         cvrows = self.spans + 3
         frac = 1.0 / self.spans
         thrdFrac = .333 * frac
-
-        mc.setAttr("{}.translateX".format(ribbon), self.width * .5)
-        mc.xform(ribbon, ws=True, ro=(90, 0, 90))
-        """
-        # Set the position of the ribbon to the base driver joint
-        pos = mc.xform(btDriver, q=True, ws=True, rp=True)
-        mc.xform(ribbon, ws=True, t=(
-            pos[0] + (self.width * .5), pos[1], pos[2]))
-
-        # Set the rotation of the ribbon to the base driver joint
-        mc.parent(ribbon, btDriver)
-        # Remember to set driver joint rotation order to yzxx
-        mc.xform(ribbon, ro=(90, 0, 90))
-        mc.parent(ribbon, "{}_grp".format(ribbon))
-        mc.reorder(ribbon, f=True)
-
-        # Group driver joints under ribbon grp
-        driverGrp = mc.createNode(
-            "transform", n="{}_driverJnts_grp".format(ribbon))
-        mc.parent(driverGrp, "{}_grp".format(ribbon))
-        mc.matchTransform(driverGrp, btDriver)
-        mc.parent(btDriver, driverGrp)
-        """
-
-        # turn off ribbon's inherit transform to prevent double transforms
-        mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
-        for crv in self.lenCurves:
-            # turn off curve's inherit transform to prevent double transforms
-            mc.setAttr("{}.inheritsTransform".format(crv), 0)
 
         # Apply skincluster to ribbon
         sc = mc.skinCluster(btDriver, tpDriver, ribbon, n=ribbon + "_sc")[0]
@@ -319,6 +298,12 @@ class Ribbon(mt.Rivet):
 
             mc.skinPercent(sc, "%s.cv[%s][0:3]" %
                            (ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+
+        # turn off ribbon's inherit transform to prevent double transforms
+        mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
+        for crv in self.lenCurves:
+            # turn off curve's inherit transform to prevent double transforms
+            mc.setAttr("{}.inheritsTransform".format(crv), 0)
 
     def skin_trio_drivers(self):
         """
