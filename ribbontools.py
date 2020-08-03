@@ -306,9 +306,8 @@ class Ribbon(mt.Rivet):
 
         # turn off ribbon's inherit transform to prevent double transforms
         mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
-        for crv in self.lenCurves:
-            # turn off curve's inherit transform to prevent double transforms
-            mc.setAttr("{}.inheritsTransform".format(crv), 0)
+        # turn off curve's inherit transform to prevent double transforms
+        mc.setAttr("{}.inheritsTransform".format(crv), 0)
 
     def skin_trio_drivers(self):
         """
