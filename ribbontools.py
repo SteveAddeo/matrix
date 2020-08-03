@@ -50,7 +50,7 @@ class Ribbon(mt.Rivet):
         your ribbon's length data for volume preservation
         """
         crv = mc.duplicateCurve("{}.v[0.5]".format(
-            self.ribbon), ch=True, rn=False, l=True, n=self.ribbon.replace("ribbon", "crv"))[0]
+            self.ribbon), ch=False, rn=False, l=True, n=self.ribbon.replace("ribbon", "crv"))[0]
         mc.setAttr("{}.visibility".format(crv), 0)
 
         # Add curve to lenCurves cless variable
@@ -273,14 +273,19 @@ class Ribbon(mt.Rivet):
         Creates a pair of driver joints at either end of your ribbon
         """
         ribbon = self.ribbon
+        crv = self.lenCurves[0]
         cvrows = self.spans + 3
         frac = 1.0 / self.spans
         thrdFrac = .333 * frac
 
+        # Freeze transformation of the base driver joint
         mc.makeIdentity(btDriver, a=True)
 
-        # Apply skincluster to ribbon
-        sc = mc.skinCluster(btDriver, tpDriver, ribbon, n=ribbon + "_sc")[0]
+        # Apply skincluster to ribbon and lenCrv
+        scRib = mc.skinCluster(btDriver, tpDriver, ribbon,
+                               n="{}_sc".format(ribbon))[0]
+        scCrv = mc.skinCluster(btDriver, tpDriver, crv,
+                               n="{}_sc".format(crv))[0]
         for i in range(cvrows):
             if i == 0:
                 btwt = 1
@@ -297,9 +302,11 @@ class Ribbon(mt.Rivet):
             else:
                 btwt = 1 - ((i - 1) * frac)
                 tpwt = (i - 1) * frac
-
-            mc.skinPercent(sc, "%s.cv[%s][0:3]" %
-                           (ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+            # Set the weighting of the CVs based on the number of CV rows
+            mc.skinPercent(scRib, "{}.cv[{}][0:3]".format(
+                ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+            mc.skinPercent(scCrv, "{}.cv[{}]".format(crv, i), tv=[
+                           (btDriver, btwt), (tpDriver, tpwt)])
 
         # turn off ribbon's inherit transform to prevent double transforms
         mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
