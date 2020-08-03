@@ -88,7 +88,7 @@ class Ribbon(mt.Rivet):
         of your ribbon
         """
         ribbon = self.ribbon
-        rig = mc.createNode("transform", n="{}{}}".format(self.name, RIG))
+        rig = mc.createNode("transform", n="{}{}".format(self.name, RIG))
         mc.select(ribbon, r=True)
 
         # set your ribbon as the driver object
