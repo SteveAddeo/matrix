@@ -257,7 +257,7 @@ class Ribbon(mt.Rivet):
         rot = mc.getAttr("{}.rotate".format(btDriver))[0]
         for i, v in enumerate(VECTORS):
             mc.setAttr("{}_rig.translate{}".format(self.name, v), pos[i])
-            mc.setAttr("{}_rig.test_rig.rotate{}".format(self.name, v), rot[i])
+            mc.setAttr("{}_rig.rotate{}".format(self.name, v), rot[i])
         mc.setAttr("{}.translateX".format(self.robbon), self.width * .5)
 
     def orient_x_to_y(self):
