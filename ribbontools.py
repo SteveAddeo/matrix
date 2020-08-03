@@ -265,6 +265,7 @@ class Ribbon(mt.Rivet):
         Ribbons may have to be aligned to their driver joints, this method
         aligns the ribbon to the joint's Y axis
         """
+        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
         mc.setAttr("{}.rotateZ".format(self.ribbon), 90)
         mc.setAttr("{}.rotateX".format(self.ribbon), 90)
 
@@ -310,7 +311,8 @@ class Ribbon(mt.Rivet):
         mc.setAttr("{}.inheritsTransform".format(crv), 0)
 
         # Group your driver joints and parent it to your rig group
-        driverGrp = mc.createNode("transform", n="{}_driver_jnt_grp".format(self.name))
+        driverGrp = mc.createNode(
+            "transform", n="{}_driver_jnt_grp".format(self.name))
         mc.parent(tpDriver, driverGrp)
         mc.parent(btDriver, driverGrp)
         mc.parent(driverGrp, "{}_rig".format(self.name))
