@@ -199,6 +199,8 @@ class Ribbon(mt.Rivet):
             "blendTwoAttr", asUtility=True, n="{}_volPreserve_offOn".format(crv))
         decM = mc.shadingNode("decomposeMatrix", asUtility=True,
                               n="{}{}_decM".format(self.name, RIG))
+        scl = mc.shadingNode("multiplyDivide", asUtility=True,
+                             n="{}_len_scl".format(self.name))
         nml = mc.shadingNode("multiplyDivide", asUtility=True,
                              n="{}_len_scl_nml".format(self.name))
         pwr = mc.shadingNode(
@@ -212,7 +214,8 @@ class Ribbon(mt.Rivet):
         mc.connectAttr("{}.arcLength".format(info), "{}.input1X".format(nml))
         mc.connectAttr("{}{}.worldMatrix[0]".format(
             self.name, RIG), "{}.inputMatrix".format(decM))
-        mc.connectAttr("{}.outputScale".format(decM), "{}.input2".format(nml))
+        mc.connectAttr("{}.outputScale".format(decM), "{}.input2".format(scl))
+        mc.connectAttr("{}.outputX".format(scl), "{}.input2".format(nml))
         mc.connectAttr("{}.outputX".format(nml), "{}.input1X".format(pwr))
         mc.connectAttr("{}.outputX".format(pwr), "{}.input2X".format(div))
 
@@ -225,6 +228,7 @@ class Ribbon(mt.Rivet):
         mc.setAttr("{}.operation".format(nml), 2)
         mc.setAttr("{}.operation".format(pwr), 3)
         mc.setAttr("{}.operation".format(div), 2)
+        mc.setAttr("{}.input1X".format(nml), crvLen)
         mc.setAttr("{}.input2X".format(pwr), 0.5)
         mc.setAttr("{}.input1X".format(div), 1)
 
