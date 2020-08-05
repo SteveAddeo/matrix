@@ -97,10 +97,10 @@ class Matrix:
                 # If the object isn't already part of the drivers list, put it there
                 self.drivers.append(obj)
 
-            grp = "{}{}".format(self.driven[0], GRP)
-            if parent is None or parent[0] != grp:
-                # Check to see if your driven object has a parent group and, if not, give it one
-                self.mk_parent_grp(self.driven[0])
+        grp = "{}{}".format(self.driven[0], GRP)
+        if parent is None or parent[0] != grp:
+            # Check to see if your driven object has a parent group and, if not, give it one
+            self.mk_parent_grp(self.driven[0])
 
         return self.drivers, self.driven[0]
 
