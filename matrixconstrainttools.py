@@ -325,6 +325,9 @@ class Constraint(Matrix):
 
 
 class BlendColor(Matrix):
+    def __init__(self):
+        Matrix.__init__(self, mo=False)
+
     def mk_bc(self, attr):
         """
         Create a blendColor node for each attr driving the driven object
