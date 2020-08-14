@@ -102,11 +102,11 @@ class Matrix:
         """
         Create a parent_grp and transfer objects transform attributes
         """
-        parent = mc.listRelatives(obj, p=True)[0]
+        parent = mc.listRelatives(obj, p=True)
         grp = mc.createNode("transform", n="{}{}".format(obj, GRP))
         mc.matchTransform(grp, obj)
-        if not parent is None:
-            mc.parent(grp, parent)
+        if parent is not None:
+            mc.parent(grp, parent[0])
         mc.parent(obj, grp)
         return grp
 
