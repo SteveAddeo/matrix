@@ -1,10 +1,10 @@
 ###########################################################################################
 #
 #   Title: Matrix Constraint Tools
-#   Version 2.0
+#   Version 2.1
 #   Author: Steve Addeo
 #   Created: April 15, 2020
-#   Last Updated: July 16, 2020
+#   Last Updated: August 04, 2020
 #
 #   Descritpion: Utilizes Maya's matrix nodes to apply various constraint solutions that
 #       are faster and lead to less clutter in your outliner
@@ -108,7 +108,7 @@ class Matrix:
         """
         Create a parent_grp and transfer objects transform attributes
         """
-        grp = mc.createNode("transform", n="{}_grp".format(obj))
+        grp = mc.createNode("transform", n="{}{}".format(obj, GRP))
         mc.matchTransform(grp, obj)
         mc.parent(obj, grp)
         return grp
