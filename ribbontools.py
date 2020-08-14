@@ -452,11 +452,13 @@ class Ribbon(mt.Rivet):
         """
         Move the driver joints into place and remove the proxies
         """
-        for jnt in self.driverJoints:
+        for i, jnt in enumerate(self.driverJoints):
             # Move each driver joint
             prxy = jnt.replace("driver_jnt", "prxy")
-            mc.matchTransform(jnt, prxy)
-            mc.makeIdentity(jnt, a=True)
+            if i == 0:
+                mc.matchTransform("{}{}".format(self.name, RIG), prxy)
+            else:
+                mc.matchTransform(jnt, prxy)
 
         # Delete the proxy group
         mc.delete("{}_prxy{}".format(self.name, GRP))
