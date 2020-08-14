@@ -29,7 +29,7 @@ class Ribbon(mt.Rivet):
         self.deformers = []
         self.proxies = []
 
-        if not jointNum < 3 or driverJointNum < 2:
+        if not jointNum >= 3 or driverJointNum >= 2:
             return mc.error("Rig needs a minimum of 2 drivers and 3 joints")
 
         ptPosList = []
