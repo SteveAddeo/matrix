@@ -94,7 +94,7 @@ class Ribbon(mt.Rivet):
         Create the ribbon that will be the base for your rig
         """
         width = mc.arclen(self.proxieCrv)
-        ratio = 1.0 / self.width
+        ratio = 1.0 / width
         ribbon = "{}{}".format(self.name, RIB)
         grp = "{}{}".format(ribbon, GRP)
 
