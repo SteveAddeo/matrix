@@ -29,6 +29,9 @@ class Ribbon(mt.Rivet):
         self.deformers = []
         self.proxies = []
 
+        if not jointNum < 3 or driverJointNum < 2:
+            return mc.error("Rig needs a minimum of 2 drivers and 3 joints")
+
         ptPosList = []
         attrs = [POS_ATTR, SCL_ATTR]
         prxyGrp = mc.createNode("transform", n="{}_prxy{}".format(name, GRP))
@@ -106,7 +109,7 @@ class Ribbon(mt.Rivet):
             self.mk_parent_grp(ribbon)
 
         mc.setAttr("{}.rotateOrder".format(grp), 1)
-        mc.xform(ribbon, piv=[-(self.width * .5), 0, 0])
+        mc.xform(ribbon, piv=[-(width * .5), 0, 0])
 
         self.ribbon = ribbon
 
