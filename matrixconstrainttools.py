@@ -86,7 +86,6 @@ class Matrix:
             if not mc.objectType(obj) == "transform":
                 pass
 
-            parent = mc.listRelatives(obj, p=True)
             driversChk = set(self.drivers)
             drivenChk = set(self.driven)
 
@@ -97,19 +96,17 @@ class Matrix:
                 # If the object isn't already part of the drivers list, put it there
                 self.drivers.append(obj)
 
-        grp = "{}{}".format(self.driven[0], GRP)
-        if parent is None or parent[0] != grp:
-            # Check to see if your driven object has a parent group and, if not, give it one
-            self.mk_parent_grp(self.driven[0])
-
         return self.drivers, self.driven[0]
 
     def mk_parent_grp(self, obj):
         """
         Create a parent_grp and transfer objects transform attributes
         """
+        parent = mc.listRelatives(obj, p=True)[0]
         grp = mc.createNode("transform", n="{}{}".format(obj, GRP))
         mc.matchTransform(grp, obj)
+        if not parent is None:
+            mc.parent(grp, parent)
         mc.parent(obj, grp)
         return grp
 
@@ -255,6 +252,11 @@ class Constraint(Matrix):
         dec = self.mk_decomposition(self.driven[0])
 
         if self.mo is True:
+            grp = "{}{}".format(self.driven[0], GRP)
+            parent = mc.listRelatives(self.driven[0], p=True)
+            if parent is None or parent[0] != grp:
+                # Check to see if your driven object has a parent group and, if not, give it one
+                self.mk_parent_grp(self.driven[0])
             self.set_offset()
 
         if len(self.drivers) > 1:
@@ -277,7 +279,14 @@ class Constraint(Matrix):
                 mtrxAttr = "{}.outputTranslate".format(dec)
                 drivenAttr = "{}{}".format(self.driven[0], POS_ATTR)
             if attr == ROT:
-                mtrxAttr = "{}.outputRotate".format(dec)
+                # We first need to make a quatToEuler node to match rotational ordera
+                q2e = mc.shadingNode(
+                    "quatToEuler", asUtility=True, n="{}_q2e".format(self.driven[0]))
+                ro = mc.getAttr("{}.rotateOrder".format(self.driven[0]))
+                mc.setAttr("{}.inputRotateOrder".format(q2e), ro)
+                mc.connectAttr("{}.outputQuat".format(
+                    dec), "{}.inputQuat".format(q2e))
+                mtrxAttr = "{}.outputRotate".format(q2e)
                 drivenAttr = "{}{}".format(self.driven[0], ROT_ATTR)
             if attr == SCL:
                 mtrxAttr = "{}.outputScale".format(dec)
