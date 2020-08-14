@@ -416,7 +416,7 @@ class Ribbon(mt.Rivet):
             else:
                 cvrows = spansPer + 1
 
-            for i in cvrows:
+            for i in len(cvrows):
                 # Calculate the weighting for each cvrow
                 btDriver = self.driverJoints[n]
                 tpDriver = self.driverJoints[n + 1]
