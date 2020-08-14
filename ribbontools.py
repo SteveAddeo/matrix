@@ -6,32 +6,100 @@ RIB = "_ribbon"
 RIG = "_rig"
 RIV = "_riv"
 GRP = "_grp"
+
+POS_ATTR = ".translate"
+ROT_ATTR = ".rotate"
+SCL_ATTR = ".scale"
 VECTORS = ["X", "Y", "Z"]
+ATTRS = [POS_ATTR, ROT_ATTR, SCL_ATTR]
 
 
 class Ribbon(mt.Rivet):
-    def __init__(self, name, width, spans, mo=True):
+    def __init__(self, name, jointNum=5, driverJointNum=2, primaryAxis="X"):
+        mt.Rivet.__init__(self, mo=True)
         self.name = name
-        self.width = width
-        self.spans = spans
-        self.mo = mo
-        self.drivers = []
-        self.driven = []
+        self.jointNum = jointNum
+        self.driverJointNum = driverJointNum
+        self.primaryAxis = primaryAxis
+        self.spans = ((jointNum - 1) * (driverJointNum - 1))
         self.ribbon = []
         self.lenCurves = []
         self.joints = []
+        self.driverJoints = []
         self.deformers = []
+        self.proxies = []
+
+        ptPosList = []
+        attrs = [POS_ATTR, SCL_ATTR]
+        prxyGrp = mc.createNode("transform", n="{}_prxy{}".format(name, GRP))
+        prevPrxy = "{}_base_prxy".format(name)
+        for i in range(driverJointNum):
+            # Create a set of locators to be used as proxies for your ribbon's driver joints
+            # Set position based on rig's primary axis
+            if primaryAxis == "Z":
+                ptPos = (0, 0, i * 10)
+            elif primaryAxis == "Y":
+                ptPos = (0, i * 10, 0)
+            else:
+                ptPos = (i * 10, 0, 0)
+            ptPosList.append(ptPos)
+
+            # Name the proxy based on its order in the chain
+            if i == 0:
+                prxy = "{}_base_prxy".format(name)
+            elif i == driverJointNum - 1:
+                prxy = "{}_tip_prxy".format(name)
+            elif i >= 1 and driverJointNum >= 4:
+                prxy = "{}_mid{}_prxy".format(name, str(i).zfill(2))
+            else:
+                prxy = "{}_mid_prxy".format(name)
+
+            # Create the locator
+            mc.spaceLocator(n=prxy)
+            mc.setAttr("{}.translate{}".format(prxy, primaryAxis), i * 10)
+
+            # Lock attributes you don't want to be changed so the rig is buit properly
+            if i == 0:
+                # As the root, the first proxy will have the freest range of motion
+                for v in VECTORS:
+                    mc.setAttr("{}.scale{}".format(prxy, v),
+                               lock=True, keyable=False, channelBox=False)
+                # Parent to the appropriate group
+                mc.parent(prxy, prxyGrp)
+
+            if i > 0:
+                # Child proxies will have a more limited range of movement
+                for attr in attrs:
+                    for v in VECTORS:
+                        if attr == SCL_ATTR or v != primaryAxis:
+                            mc.setAttr("{}{}{}".format(prxy, attr, v),
+                                       lock=True, keyable=False, channelBox=False)
+                # Parent to the appropriate group
+                mc.parent(prxy, prevPrxy)
+
+            self.proxies.append(prxy)
+            prevPrxy = prxy
+
+        # We also want to create a curve whose arclen will create the width of your ribbon
+        self.proxieCrv = mc.curve(
+            d=1, p=ptPosList, n="{}_prxyCrv".format(name))
+        mc.parent(self.proxieCrv, prxyGrp)
+        for i, prxy in enumerate(self.proxies):
+            clstr = mc.cluster("{}.cv[{}]".format(self.proxieCrv, i))[1]
+            mc.setAttr("{}.visibility".format(clstr), 0)
+            mc.parent(clstr, prxy)
 
     def mk_ribbon(self):
         """
         Create the ribbon that will be the base for your rig
         """
+        width = mc.arclen(self.proxieCrv)
         ratio = 1.0 / self.width
         ribbon = "{}{}".format(self.name, RIB)
         grp = "{}{}".format(ribbon, GRP)
 
         if not mc.objExists(ribbon):
-            ribbon = mc.nurbsPlane(p=(0, 0, 0), ax=(0, 1, 0), w=self.width, lr=ratio,
+            ribbon = mc.nurbsPlane(p=(0, 0, 0), ax=(0, 1, 0), w=width, lr=ratio,
                                    d=3, u=self.spans, v=1, name=ribbon, ch=True)[0]
 
         if not mc.listRelatives(ribbon, p=True) == grp:
@@ -188,6 +256,206 @@ class Ribbon(mt.Rivet):
         self.deformers.append(bend)
         return bend
 
+    def mk_driver_joints(self):
+        """
+        Create the joints that will drive your ribbon
+        """
+        for i in range(self.driverJointNum):
+            # Define rotation order based on riibbon's primary axis
+            if self.primaryAxis == "X":
+                ro = "xyz"
+            elif self.primaryAxis == "Y":
+                ro = "yzx"
+            else:
+                ro = "zxy"
+
+            if i == 0:
+                jnt = mc.joint(n="{}_base_driver_jnt".format(
+                    self.name), rad=3, roo=ro)
+            elif i == self.driverJointNum - 1:
+                jnt = mc.joint(n="{}_tip_driver_jnt".format(
+                    self.name), rad=3, roo=ro)
+                mc.setAttr("{}.translate{}".format(
+                    jnt, self.primaryAxis), mc.arclen(self.proxieCrv) / (self.driverJointNum - 1))
+            elif i == 1 and self.driverJointNum == 3:
+                jnt = mc.joint(n="{}_mid_driver_jnt".format(
+                    self.name), rad=3, roo=ro)
+                mc.setAttr("{}.translate{}".format(
+                    jnt, self.primaryAxis), mc.arclen(self.proxieCrv) / (self.driverJointNum - 1))
+            else:
+                jnt = mc.joint(
+                    n="{}_mid{}_driver_jnt".format(self.name, str(i).zfill(2)), rad=3, roo=ro)
+                mc.setAttr("{}.translate{}".format(jnt, self.primaryAxis), mc.arclen(
+                    self.proxieCrv) / (self.driverJointNum - 1))
+
+            self.driverJoints.append(jnt)
+
+        # Group your driver joints and parent it to your rig group
+        driverGrp = mc.createNode(
+            "transform", n="{}_driver_jnt_grp".format(self.name))
+        mc.parent(self.driverJoints[0], driverGrp)
+        mc.parent(driverGrp, "{}{}".format(self.name, RIG))
+        mc.reorder(driverGrp, r=-1)
+
+        return self.driverJoints
+
+    def orient_to_axis(self):
+        """
+        Aligns the ribbon to the primary axis
+        """
+        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
+        mc.setAttr("{}.translate{}".format(
+            self.lenCurves[0], self.primaryAxis), self.width * .5)
+
+        if self.primaryAxis == "Z":
+            mc.setAttr("{}.rotateY".format(self.ribbon), -90)
+            mc.setAttr("{}.rotateY".format(self.lenCurves[0]), -90)
+
+        if self.primaryAxis == "Y":
+            mc.setAttr("{}.rotateZ".format(self.ribbon), 90)
+            mc.setAttr("{}.rotateX".format(self.ribbon), 90)
+            mc.setAttr("{}.rotateZ".format(self.lenCurves[0]), 90)
+
+    def mv_ribbon(self):
+        """
+        Move the Rig group into position with the bottom driver
+        """
+        btDriver = self.driverJoints[0]
+        pos = mc.getAttr("{}.translate".format(btDriver))[0]
+        rot = mc.getAttr("{}.rotate".format(btDriver))[0]
+        for i, v in enumerate(VECTORS):
+            mc.setAttr("{}_rig.translate{}".format(self.name, v), pos[i])
+            mc.setAttr("{}_rig.rotate{}".format(self.name, v), rot[i])
+        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
+
+    def skin_duo_drivers(self):
+        """
+        Creates a pair of driver joints at either end of your ribbon
+        """
+        btDriver = self.driverJoints[0]
+        tpDriver = self.driverJoints[1]
+        ribbon = self.ribbon
+        crv = self.lenCurves[0]
+        cvrows = self.spans + 3
+        frac = 1.0 / self.spans
+        thrdFrac = .333 * frac
+
+        # Freeze transformation of the base driver joint
+        mc.makeIdentity(btDriver, a=True)
+
+        # Apply skincluster to ribbon and lenCrv
+        scRib = mc.skinCluster(btDriver, tpDriver, ribbon,
+                               n="{}_sc".format(ribbon))[0]
+        scCrv = mc.skinCluster(btDriver, tpDriver, crv,
+                               n="{}_sc".format(crv))[0]
+        for i in range(cvrows):
+            if i == 0:
+                btwt = 1
+                tpwt = 0
+            elif i == 1:
+                btwt = 1 - thrdFrac
+                tpwt = thrdFrac
+            elif i == cvrows - 2:
+                btwt = thrdFrac
+                tpwt = 1 - thrdFrac
+            elif i == cvrows - 1:
+                btwt = 0
+                tpwt = 1
+            else:
+                btwt = 1 - ((i - 1) * frac)
+                tpwt = (i - 1) * frac
+            # Set the weighting of the CVs based on the number of CV rows
+            mc.skinPercent(scRib, "{}.cv[{}][0:3]".format(
+                ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+            mc.skinPercent(scCrv, "{}.cv[{}]".format(
+                crv, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+
+        # turn off ribbon's inherit transform to prevent double transforms
+        mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
+        # turn off curve's inherit transform to prevent double transforms
+        mc.setAttr("{}.inheritsTransform".format(crv), 0)
+
+        # Group your driver joints and parent it to your rig group
+        driverGrp = mc.createNode(
+            "transform", n="{}_driver_jnt_grp".format(self.name))
+        mc.parent(tpDriver, driverGrp)
+        mc.parent(btDriver, driverGrp)
+        mc.parent(driverGrp, "{}_rig".format(self.name))
+        mc.reorder(driverGrp, r=-1)
+
+    def skin_to_drivers(self):
+        """
+        Skin the ribbon to the driver joints
+        """
+        ribbon = self.ribbon
+        crv = self.lenCurves[0]
+        spansPer = self.jointNum - 1
+        frac = 1.0 / self.spans
+        thrdFrac = .333 * frac
+
+        # Freeze transformation of the base driver joint
+        mc.makeIdentity(self.driverJoints[0], a=True)
+
+        # Apply skincluster to ribbon and lenCrv
+        scRib = mc.skinCluster(self.driverJoints[0], ribbon,
+                               n="{}_sc".format(ribbon))[0]
+        scCrv = mc.skinCluster(self.driverJoints[0], crv,
+                               n="{}_sc".format(crv))[0]
+
+        for n in range(self.driverJointNum - 1):
+            # Determine the number of cvrows between each pair of driver joints
+            if n == 0 and self.driverJointNum == 2:
+                cvrows = spansPer + 3
+            elif n == 0 and self.driverJointNum >= 3 or n == self.driverJointNum and self.driverJointNum >= 3:
+                cvrows = spansPer + 2
+            else:
+                cvrows = spansPer + 1
+
+            for i in cvrows:
+                # Calculate the weighting for each cvrow
+                btDriver = self.driverJoints[n]
+                tpDriver = self.driverJoints[n + 1]
+
+                if i == 0:
+                    btwt = 1
+                    tpwt = 0
+                elif i == 1 and n == 0:
+                    btwt = 1 - thrdFrac
+                    tpwt = thrdFrac
+                elif i == cvrows - 2 and n == self.driverJointNum - 2:
+                    btwt = thrdFrac
+                    tpwt = 1 - thrdFrac
+                elif i == cvrows - 1:
+                    btwt = 0
+                    tpwt = 1
+                else:
+                    btwt = 1 - ((i - 1) * frac)
+                    tpwt = (i - 1) * frac
+
+                # Set the weighting of the CVs based on the number of CV rows
+                mc.skinPercent(scRib, "{}.cv[{}][0:3]".format(
+                    ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+                mc.skinPercent(scCrv, "{}.cv[{}]".format(
+                    crv, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+
+        # turn off ribbon's inherit transform to prevent double transforms
+        mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
+        # turn off curve's inherit transform to prevent double transforms
+        mc.setAttr("{}.inheritsTransform".format(crv), 0)
+
+    def align_to_proxies(self):
+        """
+        Move the driver joints into place and remove the proxies
+        """
+        for jnt in self.driverJoints:
+            # Move each driver joint
+            prxy = jnt.replace("driver_jnt", "prxy")
+            mc.matchTransform(jnt, prxy)
+            mc.makeIdentity(jnt, a=True)
+
+        # Delete the proxy group
+        mc.delete("{}_prxy{}".format(self.name, GRP))
+
     def set_preserve_vol(self):
         """
         Set the squash & stretch ammounts for ribbon joints
@@ -242,98 +510,3 @@ class Ribbon(mt.Rivet):
                            "{}.scaleZ".format(joint))
             mc.connectAttr("{}.outputScale".format(decM),
                            "{}.scale".format(riv), f=True)
-
-        """
-        # Need to figgure out how to apply to multiple cuves
-        if len(self.lenCurves) == 1:
-            crvs = self.lenCurves
-        else:
-            crvs = self.lenCurves[1:len(self.lenCurves)]
-
-        blendList = []
-        for crv in crvs:
-        """
-
-    def mv_rig(self, btDriver):
-        """
-        Move the Rig group into position with the bottom driver
-        """
-        pos = mc.getAttr("{}.translate".format(btDriver))[0]
-        rot = mc.getAttr("{}.rotate".format(btDriver))[0]
-        for i, v in enumerate(VECTORS):
-            mc.setAttr("{}_rig.translate{}".format(self.name, v), pos[i])
-            mc.setAttr("{}_rig.rotate{}".format(self.name, v), rot[i])
-        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
-
-    def orient_ribbon_x_to_y(self):
-        """
-        Ribbons may have to be aligned to their driver joints, this method
-        aligns the ribbon to the joint's Y axis
-        """
-        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
-        mc.setAttr("{}.rotateZ".format(self.ribbon), 90)
-        mc.setAttr("{}.rotateX".format(self.ribbon), 90)
-        mc.setAttr("{}.rotateZ".format(self.lenCurves[0]), 90)
-        mc.setAttr("{}.rotateX".format(self.lenCurves[0]), 90)
-        mc.setAttr("{}.translateY".format(self.lenCurves[0]), self.width * .5)
-
-    def skin_duo_drivers(self, btDriver, tpDriver):
-        """
-        Creates a pair of driver joints at either end of your ribbon
-        """
-        ribbon = self.ribbon
-        crv = self.lenCurves[0]
-        cvrows = self.spans + 3
-        frac = 1.0 / self.spans
-        thrdFrac = .333 * frac
-
-        # Freeze transformation of the base driver joint
-        mc.makeIdentity(btDriver, a=True)
-
-        # Apply skincluster to ribbon and lenCrv
-        scRib = mc.skinCluster(btDriver, tpDriver, ribbon,
-                               n="{}_sc".format(ribbon))[0]
-        scCrv = mc.skinCluster(btDriver, tpDriver, crv,
-                               n="{}_sc".format(crv))[0]
-        for i in range(cvrows):
-            if i == 0:
-                btwt = 1
-                tpwt = 0
-            elif i == 1:
-                btwt = 1 - thrdFrac
-                tpwt = thrdFrac
-            elif i == cvrows - 2:
-                btwt = thrdFrac
-                tpwt = 1 - thrdFrac
-            elif i == cvrows - 1:
-                btwt = 0
-                tpwt = 1
-            else:
-                btwt = 1 - ((i - 1) * frac)
-                tpwt = (i - 1) * frac
-            # Set the weighting of the CVs based on the number of CV rows
-            mc.skinPercent(scRib, "{}.cv[{}][0:3]".format(
-                ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
-            mc.skinPercent(scCrv, "{}.cv[{}]".format(
-                crv, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
-
-        # turn off ribbon's inherit transform to prevent double transforms
-        mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
-        # turn off curve's inherit transform to prevent double transforms
-        mc.setAttr("{}.inheritsTransform".format(crv), 0)
-
-        # Group your driver joints and parent it to your rig group
-        driverGrp = mc.createNode(
-            "transform", n="{}_driver_jnt_grp".format(self.name))
-        mc.parent(tpDriver, driverGrp)
-        mc.parent(btDriver, driverGrp)
-        mc.parent(driverGrp, "{}_rig".format(self.name))
-        mc.reorder(driverGrp, r=-1)
-
-    def skin_trio_drivers(self):
-        """
-        Creates a set of driver joints: one in the middle and
-        two at either end of your ribbon
-        """
-        # return driverJnts
-        pass
