@@ -302,23 +302,6 @@ class Ribbon(mt.Rivet):
 
         return self.driverJoints
 
-    def orient_to_axis(self):
-        """
-        Aligns the ribbon to the primary axis
-        """
-        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
-        mc.setAttr("{}.translate{}".format(
-            self.lenCurves[0], self.primaryAxis), self.width * .5)
-
-        if self.primaryAxis == "Z":
-            mc.setAttr("{}.rotateY".format(self.ribbon), -90)
-            mc.setAttr("{}.rotateY".format(self.lenCurves[0]), -90)
-
-        if self.primaryAxis == "Y":
-            mc.setAttr("{}.rotateZ".format(self.ribbon), 90)
-            mc.setAttr("{}.rotateX".format(self.ribbon), 90)
-            mc.setAttr("{}.rotateZ".format(self.lenCurves[0]), 90)
-
     def mv_ribbon(self):
         """
         Move the Rig group into position with the bottom driver
@@ -329,7 +312,26 @@ class Ribbon(mt.Rivet):
         for i, v in enumerate(VECTORS):
             mc.setAttr("{}_rig.translate{}".format(self.name, v), pos[i])
             mc.setAttr("{}_rig.rotate{}".format(self.name, v), rot[i])
-        mc.setAttr("{}.translateX".format(self.ribbon), self.width * .5)
+        mc.setAttr("{}.translateX".format(self.ribbon),
+                   mc.arclen(self.lenCurves[0]) * .5)
+
+    def orient_to_axis(self):
+        """
+        Aligns the ribbon to the primary axis
+        """
+        mc.setAttr("{}.translateX".format(self.ribbon),
+                   mc.arclen(self.lenCurves[0]) * .5)
+        mc.setAttr("{}.translate{}".format(
+            self.lenCurves[0], self.primaryAxis), mc.arclen(self.lenCurves[0]) * .5)
+
+        if self.primaryAxis == "Z":
+            mc.setAttr("{}.rotateY".format(self.ribbon), -90)
+            mc.setAttr("{}.rotateY".format(self.lenCurves[0]), -90)
+
+        if self.primaryAxis == "Y":
+            mc.setAttr("{}.rotateZ".format(self.ribbon), 90)
+            mc.setAttr("{}.rotateX".format(self.ribbon), 90)
+            mc.setAttr("{}.rotateZ".format(self.lenCurves[0]), 90)
 
     def skin_duo_drivers(self):
         """
