@@ -87,6 +87,7 @@ class Ribbon(mt.Rivet):
         self.proxieCrv = mc.curve(
             d=1, p=ptPosList, n="{}_prxyCrv".format(name))
         mc.parent(self.proxieCrv, prxyGrp)
+        mc.setAttr("{}.inheritsTransform".format(self.proxieCrv))
         for i, prxy in enumerate(self.proxies):
             clstr = mc.cluster("{}.cv[{}]".format(self.proxieCrv, i))[1]
             mc.setAttr("{}.visibility".format(clstr), 0)
