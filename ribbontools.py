@@ -520,10 +520,13 @@ class Ribbon(mt.Rivet):
                            "{}.scale".format(riv), f=True)
 
     def build_ribbon_rig(self):
+        """
+        Goes through all the steps to build your ribbon rig
+        """
         self.mk_ribbon()
         self.mk_len_crv()
-        self.mk_rig()
         self.mk_driver_joints()
+        self.mk_rig()
         self.mv_ribbon()
         self.orient_to_axis()
         self.skin_to_drivers()
