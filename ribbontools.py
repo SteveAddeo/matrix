@@ -525,8 +525,8 @@ class Ribbon(mt.Rivet):
         """
         self.mk_ribbon()
         self.mk_len_crv()
-        self.mk_driver_joints()
         self.mk_rig()
+        self.mk_driver_joints()
         self.mv_ribbon()
         self.orient_to_axis()
         self.skin_to_drivers()
