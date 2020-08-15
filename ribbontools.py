@@ -518,3 +518,14 @@ class Ribbon(mt.Rivet):
                            "{}.scaleZ".format(joint))
             mc.connectAttr("{}.outputScale".format(decM),
                            "{}.scale".format(riv), f=True)
+
+    def build_ribbon_rig(self):
+        self.mk_ribbon()
+        self.mk_len_crv()
+        self.mk_rig()
+        self.mk_driver_joints()
+        self.mv_ribbon()
+        self.orient_to_axis()
+        self.skin_to_drivers()
+        self.align_to_proxies()
+        self.set_preserve_vol()
