@@ -15,7 +15,7 @@ ATTRS = [POS_ATTR, ROT_ATTR, SCL_ATTR]
 
 
 class Ribbon(mt.Rivet):
-    def __init__(self, name, jointNum=5, driverJointNum=2, primaryAxis="X"):
+    def __init__(self, name, jointNum=3, driverJointNum=2, primaryAxis="X"):
         mt.Rivet.__init__(self, mo=True)
         self.name = name
         self.jointNum = jointNum
