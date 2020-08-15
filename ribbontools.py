@@ -220,9 +220,13 @@ class Ribbon(mt.Rivet):
                 bs_targets), deformer, 1.0), w=[len(bs_targets), 1.0])
 
         # Group everything together
+        defGrp = "{}_deformers{}".format(ribbon, GRP)
+        if not mc.objExists(defGrp):
+            mc.createNode("transform", n=defGrp)
+            mc.parent(defGrp, "{}{}".format(self.name, RIG))
         grp = mc.group(deformer, hndl, n="{}{}".format(deformer, GRP))
         mc.select(ribbon, r=True)
-        mc.parent(grp, "{}{}".format(ribbon, GRP))
+        mc.parent(grp, defGrp)
         mc.setAttr("{}.visibility".format(grp), 0)
 
         return deformer
@@ -526,6 +530,7 @@ class Ribbon(mt.Rivet):
         self.mk_ribbon()
         self.mk_len_crv()
         self.mk_rig()
+        self.mk_twist()
         self.mk_driver_joints()
         self.mv_ribbon()
         self.orient_to_axis()
