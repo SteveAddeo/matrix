@@ -271,7 +271,7 @@ class Constraint(Matrix):
                 dOut = "{}_multM.matrixSum".format(self.drivers[0])
             else:
                 dOut = "{}{}".format(self.drivers[0], WM)
-            mc.connectAttr(dOut, "{}{}".format(dec, MTRXIN))
+            mc.connectAttr(dOut, "{}{}".format(dec, MTRXIN), f=True)
 
         for attr in attrs:
             # Connect specified attributes to your driven object
