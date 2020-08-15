@@ -444,9 +444,9 @@ class Ribbon(mt.Rivet):
 
                 # Set the weighting of the CVs based on the number of CV rows
                 mc.skinPercent(scRib, "{}.cv[{}][0:3]".format(
-                    ribbon, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+                    ribbon, n + i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
                 mc.skinPercent(scCrv, "{}.cv[{}]".format(
-                    crv, i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
+                    crv, n + i), tv=[(btDriver, btwt), (tpDriver, tpwt)])
 
         # turn off ribbon's inherit transform to prevent double transforms
         mc.setAttr("{}.inheritsTransform".format(ribbon), 0)
